@@ -1,3 +1,0 @@
-[submodule "lib/nRF24Communication"]
-	path = lib/nRF24Communication
-	url = git@github.com:robocin/communication-embedded.git
