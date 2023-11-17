@@ -1,72 +1,172 @@
 #include "utils.h"
 
 namespace utils {
-    //New control parameters: param_angular * x + param_linear
-    double param_angular_pos = 0.5216;
-    double param_angular_neg = 0.5188;
-    double param_linear_pos = 8.973;
-    double param_linear_neg =  -8.572;
+    // New control parameters: param_angular * x + param_linear
+    double param_angular_pos_high = 1.688; //ok
+    double param_angular_pos_low = 2.072; //ok
+    double param_angular_neg_high = 1.727; //ok
+    double param_angular_neg_low = 2.113; //ok
+    double param_linear_pos_high = -9.702;  //
+    double param_linear_pos_low = -11; //ok
+    double param_linear_neg_high = 7.159; //ok
+    double param_linear_neg_low = 7.085; //ok
 
-    //OLD control M1, M2, M3, M4
-    //26 - 80 PWM
-    double param_linear_high = -0.013224680654642617;
-    double param_angular_high = 0.5747438597464971;
-
-    //16 - 25 PWM
-    double param_linear_med = -0.007091802443299156;
-    double param_angular_med = 0.8732608145568327;
-    //11 - 15 PWM
-    double param_linear_low = 0.009218162479061202;
-    double param_angular_low = 1.4021732662260056;
-    // 0 - 11 PWM
-    double param_linear_ex_low = -0.03891500283241567;
-    double param_angular_ex_low = 2.4368664502124703;
-
-    //To control M5
-    //9.4 - 22 PWM == -13.44 ~ -314.159 RAD/S
-    double param_linear_r1 = 210.9059206;
-    double param_angular_r1 = -23.8665873;
-    //22 - 38 PWM == -314.159 ~ -688.158 RAD/S
-    double param_linear_r2 = 200.089625;
-    double param_angular_r2 = -23.3749375;
-    //38 - 53 PWM == -688.158 ~ -1002.318 RAD/S
-    double param_linear_r3 = 107.714;
-    double param_angular_r3 = -20.944;
-    //53 - 73 PWM == -1002.318 ~ -1436.150 RAD/S
-    double param_linear_r4 = 127.3368;
-    double param_angular_r4 = -20.600;
-    //73 PWM == -1436.150 RAD/S
-    double param_linear_r5 = 140.3368;
-    double param_angular_r5 = -20.320;
-
-    DigitalIn PBT1(PIN_PB1);
-    DigitalIn PBT2(PIN_PB2);
-    DigitalIn SW1(PIN_SELECTOR_1);
-    DigitalIn SW2(PIN_SELECTOR_2);
-    DigitalIn SW3(PIN_SELECTOR_3);
-    DigitalIn SW4(PIN_SELECTOR_4);
-    PwmOut Buzzer(PIN_BUZZER);
-
+    DigitalIn SW1(PIN_SELECTOR_1, PullUp);
+    DigitalIn SW2(PIN_SELECTOR_2, PullUp);
+    DigitalIn SW3(PIN_SELECTOR_3, PullUp);
+    DigitalIn SW4(PIN_SELECTOR_4, PullUp);
+    // DigitalOut _red(PIN_LED_RED);
+    // DigitalOut _green(PIN_LED_RED);
+    // DigitalOut _blue(PIN_LED_RED);
+    // PwmOut Buzzer(PIN_BUZZER);
+    
     AnalogIn BATT(PIN_BATT);
 
-    void initRobot(){
-        printf("Booting Robot....id %d\n", getRobotId());
-        Buzzer.period_us(DEFAULT_BUZZER_CYCLE);
-        Status::init(PIN_RGB);
-        Status::send(0x0000FF, DRIBBLER_LED);
-        Buzzer.write(DEFAULT_BUZZER_FREQUENCY);
-        Status::sendAllColor(0x00FF00, 80);
-        Buzzer.write(0);
-        ThisThread::sleep_for(80ms);
-        Buzzer.write(DEFAULT_BUZZER_FREQUENCY);
-        Status::sendAllColor(0x00FF00, 80);
-        Buzzer.write(0);
-        ThisThread::sleep_for(80ms);
-        Buzzer.write(DEFAULT_BUZZER_FREQUENCY);
-        Status::sendAllColor(0x00FF00, 80);
-        Buzzer.write(0);
-        Status::clearColors();
+    // AnalogIn current_M1(M1_CURR);
+    // AnalogIn current_M2(M2_CURR);
+
+    float battAverage = 0;
+    
+    void initRobot()
+    {
+        int robotId = utils::getRobotId();
+
+        // Status::init(PIN_LED_RED);
+                
+        printf("Initializing robot...\n");
+        printf("RobotId = %d\n", robotId);
+        updateBatteryAvg();
+        ThisThread::sleep_for(1000ms);
+
+        checkBattery();
+
+        // Status::send(WHITE, LED_1); 
+        // Status::send(GREEN, LED_2);
+        beep(1000);
+        noBeep(0);
+
+        ThisThread::sleep_for(1500ms);
+
+        switch (robotId%4){
+        case 0:
+            blinkColor(robotId, RED);
+            break;
+        case 1:
+            blinkColor(robotId, GREEN);
+            break;
+        case 2:
+            blinkColor(robotId, ROSA);
+            break;
+        case 3:
+            blinkColor(robotId, CIANO);
+            break;
+        }
+        printf("Initialization complete!\n");
     }
+
+    // BATTERY
+    double getBattery()
+    {
+        float value = BATT.read();
+        //linear regression
+        double last_battery = SLOPE*value + INTERCEPT;
+
+        return  last_battery;
+    }
+
+    double getBatteryAvg(){
+        return battAverage;
+    }
+
+    void updateBatteryAvg(){
+        if(battAverage != 0){
+            battAverage = BATT_AVG_WEIGHT*getBattery() + (1.0 - BATT_AVG_WEIGHT)*battAverage;
+        } else {
+            battAverage = getBattery();
+        }
+    }
+
+    void checkBattery()
+    {
+        updateBatteryAvg();
+        if(battAverage < BATT_WARNING_VOLT && battAverage >= BATT_MINIMAL_VOLT){
+            //Warning
+            for(int i = 0; i < 10; i++){
+                beep(300);
+                noBeep(100);
+            }
+        } else if (battAverage < BATT_MINIMAL_VOLT){
+            //Stops robot
+            printf("Low battery!\n");
+            while(1){
+                beep(300);
+                noBeep(100);
+            }
+        }
+    }
+
+    int getRobotId()
+    {
+        int _robotId = 0;
+        // _robotId += (!SW1.read());
+        _robotId += (!SW2.read() * 4);
+        _robotId += (!SW3.read() * 2);
+        _robotId += (!SW4.read() * 1);
+        
+        if(_robotId <= 15)
+            return _robotId;
+        else
+            return 16;
+    }
+    
+    void blinkColor(int time, int hexValue)
+    {   
+        // Status::send(hexValue, ALL_LEDS);
+
+        if (time == 0) 
+            ThisThread::sleep_for(500ms);
+        
+        for(; time > 0; time--){
+            beep(500);
+            noBeep(100);
+        }
+        // Status::clearColors();
+    }
+
+    void beep(uint32_t time)
+    {
+        // Buzzer.period_ms(2); 
+        // Buzzer.write(0.5);
+        // ThisThread::sleep_for(time);
+    }
+
+    void noBeep(uint32_t time)
+    {
+        // Buzzer.write(0);
+        // ThisThread::sleep_for(time);
+    }
+
+    void  writeRGB(int hexValue)
+    {
+        int red, green, blue;
+
+        red     = ((hexValue >> 16) & 0xFF) / 255.0;
+        green   = ((hexValue >> 8) & 0xFF) / 255.0;
+        blue    = ((hexValue) & 0xFF) / 255.0;
+        
+        // _red.write(red);
+        // _green.write(green);
+        // _blue.write(blue);
+    }
+
+    // double getCurrent(uint8_t motor){
+    //     if(motor == 1){
+    //         return current_M1.read();
+    //     } else if(motor == 2){
+    //         return current_M2.read();
+    //     }
+    // }
+    // motor curve function
 
     bool timerMillisExpired(const Timer& timer, double time){
       return timerRead<chrono::milliseconds>(timer) > time;
@@ -76,167 +176,29 @@ namespace utils {
       return timerRead<chrono::milliseconds>(timer);
     }
 
-    //New line equation to control M1, M2, M3, M4
     double rad_s_to_pwm_pi(double rad_s)
     {
-        double param_angular = param_angular_pos;
-        double param_linear = param_linear_pos;
-
-        if (fabs(rad_s) < MOTOR_MIN_SPEED_RAD_S) {
-            return 0;
-        }
-        if (rad_s < 0)
+        double param_angular = param_angular_pos_high;
+        double param_linear = param_linear_pos_high;
+        if (rad_s < -41.0)
         {
-            param_angular = param_angular_neg;
-            param_linear = param_linear_neg;
+            param_angular = param_angular_neg_high;
+            param_linear = param_linear_neg_high;
+        }
+        else if (rad_s >= -41.0 && rad_s < 0)
+        {
+            param_angular = param_angular_neg_low;
+            param_linear = param_linear_neg_low;
+        }
+        else if (rad_s >= 0 && rad_s <= 42){
+            param_angular = param_angular_pos_low;
+            param_linear = param_linear_pos_low;
+        }
+        else
+        {
+            param_angular = param_angular_pos_high;
+            param_linear = param_linear_pos_high;
         }
         return (param_angular * rad_s) + param_linear;
-    }
-
-    // OLD line equation to control M1, M2, M3, M4 to avoid conflicts with new pid
-    double rad_s_to_pwm(double rad_s)
-    {
-        double param_linear = param_linear_high;
-        double param_angular = param_angular_high;
-        if(rad_s <= 30 && rad_s >= -30){
-            if(rad_s <= 12 && rad_s >= -12){
-                if(rad_s <= 5 && rad_s >= -5){
-                        param_linear = param_linear_ex_low;
-                        param_angular = param_angular_ex_low;
-                    } else {
-                        param_linear = param_linear_low;
-                        param_angular = param_angular_low;
-                    }
-            } else {
-                param_linear = param_linear_med;
-                param_angular = param_angular_med;
-            }
-
-        }
-        return (rad_s * param_angular) + param_linear;
-    }
-    double pwm_to_rad_s(double pwm)
-    {
-        double param_linear = param_linear_high;
-        double param_angular = param_angular_high;
-        if(pwm <= 25 && pwm >= -25){
-            if(pwm <= 15 && pwm >= -15){
-                if(pwm <= 11 && pwm >= -11){
-                    param_linear = param_linear_ex_low;
-                    param_angular = param_angular_ex_low;
-                } else {
-                    param_linear = param_linear_low;
-                    param_angular = param_angular_low;
-                }
-
-            } else {
-                param_linear = param_linear_med;
-                param_angular = param_angular_med;
-            }
-        }
-        return (pwm - param_linear) / param_angular;
-    }
-    //To control M5
-    double M5_pwm_to_rad_s(double pwm){
-
-        double param_lin = 0.0;
-        double param_ang = 0.0;
-        double mod_pwm = fabs(pwm);
-
-        if(mod_pwm >= 9.4 && mod_pwm <= 22.0){
-            param_ang = param_angular_r1;
-            param_lin = param_linear_r1;
-        }
-        else if(mod_pwm > 22.0 && mod_pwm <= 38.0){
-            param_ang = param_angular_r2;
-            param_lin = param_linear_r2;
-        }
-        else if(mod_pwm > 38.0 && mod_pwm <= 53.0){
-            param_ang = param_angular_r3;
-            param_lin = param_linear_r3;
-        }
-        else if(mod_pwm > 53.0 && mod_pwm <= 73.0){
-            param_ang = param_angular_r4;
-            param_lin = param_linear_r4;
-        }
-        else if(mod_pwm > 73.0){
-            param_ang = param_angular_r5;
-            param_lin = param_linear_r5;
-        }
-
-        return ((param_ang*pwm) +param_lin);
-    }
-
-    double M5_rad_s_to_pwm(double rad_s){
-
-        double param_lin = 0.0;
-        double param_ang = 0.0;
-        double mod_rad_s = fabs(rad_s);
-        double signal_rad_s = -(rad_s/mod_rad_s);
-        if(mod_rad_s >= 13.44 && mod_rad_s <= 314.159){
-            param_ang = param_angular_r1;
-            param_lin = param_linear_r1;
-        }
-        else if(mod_rad_s > 314.159 && mod_rad_s <= 688.158){
-            param_ang = param_angular_r2;
-            param_lin = param_linear_r2;
-        }
-        else if(mod_rad_s > 688.158 && mod_rad_s <= 1002.318){
-            param_ang = param_angular_r3;
-            param_lin = param_linear_r3;
-        }
-        else if(mod_rad_s > 1002.318 && mod_rad_s <= 1436.150){
-            param_ang = param_angular_r4;
-            param_lin = param_linear_r4;
-        }
-        else if(mod_rad_s > 1436.150){
-            param_ang = param_angular_r5;
-            param_lin = param_linear_r5;
-        }
-
-
-        return ((rad_s - signal_rad_s * param_lin)/param_ang);
-    }
-
-    double last_battery = ((BATT.read()*3.3)*54)/10.0;
-    double getBattery(){
-        last_battery = (last_battery + (((BATT.read() * 3.3) * 54) / 10.0)) / 2.0;
-        return last_battery;
-    }
-    void checkBattery(){
-        while(utils::getBattery() < 15.5){
-            Buzzer.write(DEFAULT_BUZZER_FREQUENCY);
-            Status::sendRoundColor(0xFF0000, 100);
-            Buzzer.write(0);
-            ThisThread::sleep_for(500ms);
-        }
-    }
-    int getRobotId()
-    {
-        unsigned int _robotId = 0;
-        _robotId += (SW1.read());
-        _robotId += (SW2.read() * 2);
-        _robotId += (SW3.read() * 4);
-        _robotId += (SW4.read() * 8);
-        if(_robotId <= 15)
-            return _robotId;
-        else
-            return 16;
-
-    }
-    void beep(int time, int cycleUs, double frequency){
-        bool cycleUpdated = false;
-        if(cycleUs != DEFAULT_BUZZER_CYCLE){
-           Buzzer.period_us(cycleUs);
-           cycleUpdated = true;
-        }
-        
-        Buzzer.write(frequency);
-        ThisThread::sleep_for(chrono::milliseconds(time));
-        Buzzer.write(0);
-
-        if(cycleUpdated){
-            Buzzer.period_us(DEFAULT_BUZZER_CYCLE);
-        }
     }
 }
