@@ -54,7 +54,12 @@ void Encoder::init_enc_timer(TIM_TypeDef *timer)
     init_enc_timer8();
   else if (timer == TIM2)
     init_enc_timer2();
+  else if (timer == TIM3)
+    init_enc_timer3();
 }
+
+
+// AFR[0] geralmente é associado aos pinos de 0 a 7, enquanto AFR[1] é associado aos pinos de 8 a 15.
 
 void Encoder::init_enc_timer1()
 {
@@ -96,20 +101,20 @@ void Encoder::init_enc_timer1()
 
 }
 
-void Encoder::init_enc_timer8() // PC_6 PC_7 - REVISAR
+void Encoder::init_enc_timer8()   // PC_6 PC_7 - REVISAR
 {
   RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
   RCC->AHB1ENR |= RCC_AHB4ENR_GPIOCEN;
 
-  GPIOC->MODER &= ~GPIO_MODER_MODE6;
+  GPIOC->MODER &= ~GPIO_MODER_MODE6; // Tentar ~GPIO_MODER_MODE6_Msk
   GPIOC->MODER |= GPIO_MODER_MODE6_1 | GPIO_MODER_MODE7_1;
 
-  GPIOC->OTYPER |= GPIO_OTYPER_OT6 | GPIO_OTYPER_OT7;
+  GPIOC->OTYPER |= ~(GPIO_OTYPER_OT6 | GPIO_OTYPER_OT7);
 
   GPIOC->OSPEEDR |= GPIO_OSPEEDR_OSPEED6 | GPIO_OSPEEDR_OSPEED7;
 
-  GPIOC->AFR[1] |= (1 << GPIO_AFRL_AFSEL6_Pos);
-  GPIOC->AFR[1] |= (1 << GPIO_AFRL_AFSEL7_Pos);
+  GPIOC->AFR[0] |= (1 << GPIO_AFRL_AFSEL6_Pos);
+  GPIOC->AFR[0] |= (1 << GPIO_AFRL_AFSEL7_Pos);
 
   TIM8->CR1 = 0;
   TIM8->CR2 = 0;
@@ -125,13 +130,13 @@ void Encoder::init_enc_timer8() // PC_6 PC_7 - REVISAR
   TIM8->CR1 = TIM_CR1_CEN;
 }
 
-void Encoder::init_enc_timer2()  // PA_5 PB_3 - LEITURA ERRADA
+void Encoder::init_enc_timer2()   // PA_5 PB_3
 {
   RCC->APB2ENR |= RCC_APB1LENR_TIM2EN;
   RCC->AHB1ENR |= RCC_AHB4ENR_GPIOAEN | RCC_AHB4ENR_GPIOBEN;
 
-  GPIOA->MODER &= ~GPIO_MODER_MODE5;
-  GPIOB->MODER &= ~GPIO_MODER_MODE3;
+  GPIOA->MODER &= ~GPIO_MODER_MODE5; // Tentar ~GPIO_MODER_MODE5_Msk
+  GPIOB->MODER &= ~GPIO_MODER_MODE3; // Tentar ~GPIO_MODER_MODE3_Msk
 
   GPIOA->MODER |= GPIO_MODER_MODE5_1; 
   GPIOB->MODER |= GPIO_MODER_MODE3_1;
@@ -139,8 +144,8 @@ void Encoder::init_enc_timer2()  // PA_5 PB_3 - LEITURA ERRADA
   GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED5;
   GPIOB->OSPEEDR |= GPIO_OSPEEDR_OSPEED3;
 
-  GPIOA->AFR[1] |= (1 << GPIO_AFRL_AFSEL5_Pos);
-  GPIOB->AFR[1] |= (1 << GPIO_AFRL_AFSEL3_Pos);
+  GPIOA->AFR[0] |= (1 << GPIO_AFRL_AFSEL5_Pos);
+  GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL3_Pos);
 
   TIM2->CR1 = 0;
   TIM2->CR2 = 0;
@@ -156,3 +161,34 @@ void Encoder::init_enc_timer2()  // PA_5 PB_3 - LEITURA ERRADA
   TIM2->CR1 = TIM_CR1_CEN;
 
 } 
+
+void Encoder::init_enc_timer3()   // PA_6 PB_5
+{
+  RCC->APB2ENR |= RCC_APB1LENR_TIM3EN;
+  RCC->AHB1ENR |= RCC_AHB4ENR_GPIOAEN | RCC_AHB4ENR_GPIOBEN;
+
+  GPIOA->MODER &= ~GPIO_MODER_MODE6; // Tentar ~GPIO_MODER_MODE6_Msk
+  GPIOB->MODER &= ~GPIO_MODER_MODE5; // Tentar ~GPIO_MODER_MODE5_Msk
+
+  GPIOA->MODER |= GPIO_MODER_MODE6_1; 
+  GPIOB->MODER |= GPIO_MODER_MODE5_1;
+
+  GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED6;
+  GPIOB->OSPEEDR |= GPIO_OSPEEDR_OSPEED5;
+
+  GPIOA->AFR[0] |= (1 << GPIO_AFRL_AFSEL6_Pos);
+  GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL5_Pos);
+
+  TIM3->CR1 = 0;
+  TIM3->CR2 = 0;
+  TIM3->PSC = 0;
+  TIM3->ARR = 0xFFFF;
+  TIM3->RCR = 0;
+
+  TIM3->CCMR1 = TIM_CCMR1_CC1S_0 | (0x00 << 4) | TIM_CCMR1_CC2S_0 | (0x00 << 12);
+  TIM3->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;
+  TIM3->DIER = 0;
+
+  TIM3->SMCR = 3;
+  TIM3->CR1 = TIM_CR1_CEN;
+}
