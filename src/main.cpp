@@ -9,7 +9,7 @@ FileHandle* mbed::mbed_override_console(int fd) { return &serial_port; }
 Motor M1(M1_PWM, M1_DIR);
 // Motor M2(M2_PWM, M2_DIR);
 
-Encoder ENC1(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM1);
+Encoder ENC1(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM8);
 // Encoder ENC2(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM8);
 
 int main()
@@ -35,7 +35,7 @@ int main()
         //     printf("Motor 1: %f | Motor 2: %f\n", v1, v2);
         // }
 
-        // M1.run(0.8, 1);
+        M1.run(0.8, 1);
         // M2.run(1, 1);
         printf("Motor 1: %f \n", ENC1.getSpeed());
         // printf("Freq: %.2lf | Pulses: %d \n", ENC1.getFrequency(), ENC1.getPulses());
