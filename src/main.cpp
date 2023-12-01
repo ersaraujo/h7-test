@@ -12,10 +12,7 @@ FileHandle *mbed::mbed_override_console(int fd) { return &serial_port; }
 // Encoder ENC1(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM1);
 // Encoder ENC2(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM2);
 // Encoder ENC3(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM2);
-Encoder ENC4(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM8);
-
-DigitalIn pa5(PA_9);
-DigitalIn pe5(PE_9);
+Encoder ENC4(int(PULSES_PER_REV), int(SAMPLE_TIME), TIM3);
 
 int main()
 {
@@ -46,7 +43,7 @@ int main()
         // M2.run(0.8, 1);
         // printf("Motor 1: %f \n", ENC1.getSpeed());
         // printf("Freq: %.2lf | Pulses: %d \n", ENC4.getFrequency(), ENC4.getPulses());
-        printf("Timer 8: %f \n", ENC4.getSpeed());
+        printf("Timer 3: %f \n", ENC4.getSpeed());
 
         ThisThread::sleep_for(500ms);
     }
