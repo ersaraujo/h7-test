@@ -1,17 +1,22 @@
 #include "mbed.h"
 
-#define PWM_FREQUENCY 20000.0
+#define PWM_FREQUENCY 50000.0
 #define PWM_PULSE_WIDTH (1.0 / PWM_FREQUENCY)
-#define PWM_PULSE_WIDTH_US  (PWM_PULSE_WIDTH * 1000000)
+#define PWM_PULSE_WIDTH_US (PWM_PULSE_WIDTH * 1000000)
 
-class Motor {
+class Motor
+{
 public:
-    Motor(PinName in1, PinName in2);
+    Motor(PinName pwm, PinName dir, PinName rst, PinName mode, PinName coast, PinName brk);
     void init();
-    void run(double in1, double in2);
+    double run(double speed);
     void stop();
-        
+
 private:
-    PwmOut _in1;
-    PwmOut _in2;
+    PwmOut _m;
+    DigitalOut _dir;
+    DigitalOut _rst;
+    DigitalOut _mode;
+    DigitalOut _coast;
+    DigitalOut _break;
 };
