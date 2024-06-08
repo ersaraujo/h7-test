@@ -55,7 +55,7 @@
 #define M_PI                3.14159265358979323846
 #define MOTOR_GEAR          1.0
 #define WHEEL_GEAR          5.0
-#define PULSES_PER_REV      1024        
+#define PULSES_PER_REV      2048        
 #define SAMPLE_TIME         2           // 2 ms
 #define PULSES_RESET        32767
 
