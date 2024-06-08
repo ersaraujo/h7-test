@@ -1,7 +1,7 @@
 #include <mbed.h>
 #include <Motor.h>
-#include <Encoder.h>
 #include <utils.h>
+#include <Encoder.h>
 
 static BufferedSerial serial_port(USBTX, USBRX, 230400);
 FileHandle *mbed::mbed_override_console(int fd) { return &serial_port; }
@@ -30,27 +30,34 @@ int main()
 
     printf("Start...\n");
 
-    ThisThread::sleep_for(3000ms);
+    ThisThread::sleep_for(3s);
 
     while (true)
-    {
-        // double v1 = ENC1.getSpeed();
-        // double v2 = ENC2.getSpeed();
-        // while (fabs(v1)<200 && fabs(v2)<200) {
-        //     v1 = ENC1.getSpeed();
-        //     v2 = ENC2.getSpeed();
-        //     printf("Waiting...");
-        //     printf("Motor 1: %f | Motor 2: %f\n", v1, v2);
-        // }
+    {   
+        // M1.run(20);
+        // M2.run(20);
+        // M3.run(20);
+        // M4.run(20);
+        // ThisThread::sleep_for(2s);
+        // M1.run(0);
+        // M2.run(0);
+        // M3.run(0);
+        // M4.run(0);
+        // ThisThread::sleep_for(2s);
+        // M1.run(-20);
+        // M2.run(-20);
+        // M3.run(-20);
+        // M4.run(-20);
+        // ThisThread::sleep_for(2s);
+        // M1.run(0);
+        // M2.run(0);
+        // M3.run(0);
+        // M4.run(0);
+        // ThisThread::sleep_for(2s);
+        
+        printf("M1: %.2lf | M2: %.2lf | M3: %.2lf | M4: %.2lf\n", ENC1.getSpeed(), ENC2.getSpeed(), ENC3.getSpeed(), ENC4.getSpeed());
 
-        M1.run(0.1);
-        M2.run(0.1);
-        M3.run(0.1);
-        M4.run(0.1);
-        // printf("Motor 1: %f \n", ENC1.getSpeed());
-        // printf("Freq: %.2lf | Pulses: %d \n", ENC4.getFrequency(), ENC4.getPulses());
-        printf("Encoder 1: %f | Encoder 2: %f | Encoder 3: %f | Encoder 4: %f\n", ENC1.getSpeed(), ENC2.getSpeed(), ENC3.getSpeed(), ENC4.getSpeed());
-
-        ThisThread::sleep_for(500ms);
+        
     }
+
 }

@@ -40,12 +40,21 @@ double Motor::run(double speed)
     if (_mode == 0)
     {
         _dir.write(0);
-        send_pwm = map(speed, -100, 100, 1.0, 0);
+        send_pwm = map(speed, -100, 100, 0, 1.0);
+        printf("Speed: %f\n", send_pwm);
     }
     else
     {
-        _dir.write(0);
-        send_pwm = map(speed, -100, 100, 1.0, 0);
+        if(speed < 0){
+            _dir.write(1);
+            speed *= -1;
+
+        } else {
+            _dir.write(0);
+        }
+
+        send_pwm = map(speed, 0, 100, 0, 1.0);
+        // printf("Speed: %f\n", send_pwm);
     }
 
     _m.write(send_pwm);
